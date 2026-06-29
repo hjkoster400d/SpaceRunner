@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" conthetent="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>City Runner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#1a1a2e;font-family:'Segoe UI',sans-serif;touch-action:none;user-select:none}
+canvas{display:block}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#ui>*{pointer-events:auto}
+#hud{position:absolute;top:20px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;display:none}
+#hud .coins{color:#ffd700;font-size:24px;font-weight:bold;text-shadow:0 2px 4px rgba(0,0,0,.5)}
+#hud .lives{display:flex;gap:8px}
+#hud .lives .heart{width:28px;height:28px;background:#ff4757;clip-path:path('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z');transform:scale(1.2)}
+#hud .lives .heart.lost{background:#555;opacity:.4}
+#fly-btn{position:absolute;bottom:100px;right:20px;width:70px;height:70px;border-radius:50%;background:rgba(0,200,255,.3);border:2px solid rgba(0,200,255,.7);color:#fff;font-size:12px;font-weight:bold;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#fly-bar{position:absolute;bottom:80px;right:25px;width:60px;height:6px;background:rgba(255,255,255,.2);border-radius:3px;display:none}
+#fly-bar .fill{height:100%;background:#00d4ff;border-radius:3px;width:100%;transition:width .1s}
+#start-screen,#gameover-screen,#shop-screen{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,10,30,.92);backdrop-filter:blur(8px)}
+#start-screen h1{font-size:52px;color:#fff;margin-bottom:10px;text-shadow:0 0 30px rgba(100,200,255,.5)}
+#start-screen .subtitle{color:#aaa;font-size:16px;margin-bottom:40px}
+.btn{padding:16px 48px;font-size:20px;font-weight:bold;border:none;border-radius:12px;cursor:pointer;transition:transform .1s,box-shadow .1s}
+.btn:active{transform:scale(.95)}
+.btn-play{background:linear-gradient(135deg,#00d4ff,#0891b2);color:#fff;box-shadow:0 4px 20px rgba(0,212,255,.4)}
+.btn-shop{background:linear-gradient(135deg,#ffd700,#f59e0b);color:#1a1a2e;box-shadow:0 4px 20px rgba(255,215,0,.3);margin-top:16px}
+.btn-home{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3);margin-top:16px}
+.btn-small{padding:10px 24px;font-size:16px}
+#gameover-screen h2{font-size:42px;color:#ff4757;margin-bottom:20px}
+#gameover-screen .score{color:#ffd700;font-size:28px;margin-bottom:30px}
+#shop-screen h2{font-size:36px;color:#fff;margin-bottom:20px}
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px;max-width:500px;width:90%;max-height:60vh;overflow-y:auto}
+.shop-item{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:16px;text-align:center;color:#fff}
+.shop-item.owned{border-color:#00d4ff;background:rgba(0,212,255,.1)}
+.shop-item .name{font-weight:bold;margin-bottom:4px}
+.shop-item .price{color:#ffd700;font-size:14px}
+.shop-item .status{color:#00d4ff;font-size:12px;margin-top:4px}
+.wallet{color:#ffd700;font-size:20px;margin-bottom:20px}
+#start-screen .wallet{position:absolute;top:20px;right:20px}
+.hidden{display:none!important}
+.highscore-entry{display:flex;justify-content:space-between;padding:8px 12px;color:#fff;border-bottom:1px solid rgba(255,255,255,.1);font-size:14px}
+.highscore-entry:first-child{color:#ffd700;font-weight:bold}
+.highscore-entry .rank{width:24px;color:#aaa}
+.highscore-entry .hs-name{flex:1;margin:0 8px}
+.highscore-entry .hs-score{color:#ffd700}
+</style>
+</head>
+<body>
+<div id="ui">
+  <div id="hud">
+    <div class="coins">🪙 <span id="coin-count">0</span></div>
+    <div class="lives" id="lives"></div>
+  </div>
+  <button id="fly-btn" class="hidden">FLY</button>
+  <div id="fly-bar" class="hidden"><div class="fill"></div></div>
+
+  <div id="start-screen">
+    <h1>CITY RUNNER</h1>
+    <div class="subtitle">Endless runner in a deserted city</div>
+    <div class="wallet">🪙 <span class="total-coins">0</span></div>
+    <button class="btn btn-play" onclick="startGame()">PLAY</button>
+    <button class="btn btn-shop" onclick="showShop()">SHOP</button>
+    <button class="btn btn-home btn-small" onclick="showHighscores()" style="margin-top:12px">HIGHSCORES</button>
+  </div>
+
+  <div id="name-screen" class="hidden">
+    <h2 style="color:#fff;margin-bottom:20px">Wat is je naam?</h2>
+    <input type="text" id="name-input" maxlength="20" placeholder="Naam..." style="padding:12px 20px;font-size:18px;border-radius:8px;border:none;width:200px;text-align:center">
+    <button class="btn btn-play" onclick="submitName()" style="margin-top:16px">START</button>
+  </div>
+
+  <div id="gameover-screen" class="hidden">
+    <h2>GAME OVER</h2>
+    <div class="score">🪙 <span id="earned-coins">0</span> earned</div>
+    <div id="highscore-list" style="margin:10px 0;max-height:200px;overflow-y:auto;width:280px"></div>
+    <button class="btn btn-play" onclick="startGame()">PLAY AGAIN</button>
+    <button class="btn btn-home" onclick="showStart()">HOME</button>
+  </div>
+
+  <div id="highscore-screen" class="hidden">
+    <h2 style="color:#fff;margin-bottom:20px">🏆 HIGHSCORES</h2>
+    <div id="highscore-board" style="width:300px;max-height:400px;overflow-y:auto"></div>
+    <button class="btn btn-home btn-small" onclick="showStart()" style="margin-top:16px">BACK</button>
+  </div>
+
+  <div id="shop-screen" class="hidden">
+    <h2>SHOP</h2>
+    <div class="wallet">🪙 <span class="total-coins">0</span></div>
+    <div class="shop-grid" id="shop-grid"></div>
+    <button class="btn btn-home btn-small" onclick="showStart()">BACK</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/three@0.156.0/build/three.min.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

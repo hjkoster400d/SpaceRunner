@@ -1,0 +1,7 @@
+name = "space-runner"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "space-runner-scores"
+database_id = "a0acc0c9-4b5d-464c-b9aa-c5158d3fcf57"
